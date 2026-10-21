@@ -8,6 +8,42 @@ import {
 } from "./semver.ts";
 
 describe("semver helpers", () => {
+  const nodeEngineRange = "^22.23.4 || ^24.22.1 || ^26.12.1";
+  const nodeEngineCases = [
+    { version: "22.23.3", accepted: false },
+    { version: "22.23.4-rc.1", accepted: false },
+    { version: "22.23.4", accepted: true },
+    { version: "22.24.0", accepted: true },
+    { version: "23.11.0", accepted: false },
+    { version: "24.22.0", accepted: false },
+    { version: "24.22.1-rc.1", accepted: false },
+    { version: "24.22.1", accepted: true },
+    { version: "24.23.0-nightly.20261021", accepted: false },
+    { version: "24.23.0", accepted: true },
+    { version: "25.7.0", accepted: false },
+    { version: "26.12.0", accepted: false },
+    { version: "26.12.1-rc.1", accepted: false },
+    { version: "26.12.1", accepted: true },
+    { version: " v26.12.1 ", accepted: true },
+    { version: "v26.12.1-rc.1", accepted: false },
+    { version: "26.13.0-nightly.20261021", accepted: false },
+    { version: "26.13.0", accepted: true },
+    { version: "27.0.0", accepted: false },
+  ];
+
+  it.each(nodeEngineCases)("checks Node engine admission for $version", ({ version, accepted }) => {
+    expect(satisfiesSemverRange(version, nodeEngineRange)).toBe(accepted);
+  });
+
+  it.each(nodeEngineCases)(
+    "checks Node engine admission for $version in the remote JavaScript checker",
+    ({ version, accepted }) => {
+      const recreated = Function(`return (${satisfiesSemverRange.toString()});`)();
+
+      expect(recreated(version, nodeEngineRange)).toBe(accepted);
+    },
+  );
+
   it("matches supported range groups", () => {
     const range = "^22.16 || ^23.11 || >=24.10";
 
@@ -44,6 +80,8 @@ describe("semver helpers", () => {
 
   it("compares prerelease versions before stable versions", () => {
     expect(compareSemverVersions("2.1.111-beta.1", "2.1.111")).toBeLessThan(0);
+    expect(compareSemverVersions("2.1.111-beta.1", "2.1.111-beta.2")).toBeLessThan(0);
+    expect(parseSemver("2.1.111-beta.1")?.prerelease).toEqual(["beta", "1"]);
   });
 
   it("falls back to lexical comparison for malformed numeric segments", () => {
