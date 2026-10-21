@@ -142,6 +142,7 @@ export function compareSemverVersions(left: string, right: string): number {
 
 /**
  * Small semver range checker for CLI/runtime gates.
+ * Only stable comparators are supported, so prerelease versions are excluded.
  *
  * Keep the function body valid plain JavaScript: SSH startup stringifies this
  * function and runs it on remote Node versions before TypeScript support is known.
@@ -153,9 +154,7 @@ export function compareSemverVersions(left: string, right: string): number {
 export const satisfiesSemverRange: (rawVersion: string, range: string) => boolean =
   function satisfiesSemverRange(rawVersion, range) {
     const normalizedVersion = String(rawVersion).trim().replace(/^v/, "");
-    const versionMatch = normalizedVersion.match(
-      /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[0-9A-Za-z.-]+)?$/,
-    );
+    const versionMatch = normalizedVersion.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
     if (!versionMatch) {
       return false;
     }
